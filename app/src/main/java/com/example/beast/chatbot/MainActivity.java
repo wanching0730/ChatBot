@@ -13,6 +13,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -32,8 +33,12 @@ import ai.api.android.AIService;
 import ai.api.model.AIError;
 import ai.api.model.AIRequest;
 import ai.api.model.AIResponse;
+import ai.api.model.ResponseMessage;
 import ai.api.model.Result;
 import com.google.gson.JsonElement;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 
@@ -68,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements AIListener{
         ref = FirebaseDatabase.getInstance().getReference();
         ref.keepSynced(true);
 
-        final AIConfiguration config = new AIConfiguration("0c01e159babc4349b38eca698bd2f107",
+        final AIConfiguration config = new AIConfiguration("47836bc8e2494eabb7ea945d1b227d29",
                 AIConfiguration.SupportedLanguages.English,
                 AIConfiguration.RecognitionEngine.System);
 
@@ -85,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements AIListener{
             @Override
             public void onClick(View view) {
 
-                String message = editText.getText().toString().trim();
+                final String message = editText.getText().toString().trim();
 
                 if (!message.equals("")) {
 
@@ -110,9 +115,21 @@ public class MainActivity extends AppCompatActivity implements AIListener{
                             if (response != null) {
 
                                 Result result = response.getResult();
-                                String reply = result.getFulfillment().getSpeech();
-                                ChatMessage chatMessage = new ChatMessage(reply, "bot");
-                                ref.child("chat").push().setValue(chatMessage);
+                                List<ResponseMessage> messages = result.getFulfillment().getMessages();
+                                for(ResponseMessage message1 : messages) {
+                                    if(message1 instanceof ResponseMessage.ResponseSpeech){
+                                        ResponseMessage.ResponseSpeech message2 = (ResponseMessage.ResponseSpeech) message1;
+                                        for(String message3 : message2.getSpeech()) {
+                                            ChatMessage chatMessage = new ChatMessage(message3, "bot");
+                                            Log.d("message3: ", message3);
+                                            ref.child("chat").push().setValue(chatMessage);
+                                        }
+
+                                    }
+
+                                }
+
+
                             }
                         }
                     }.execute(aiRequest);
